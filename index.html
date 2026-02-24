@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Криптографическая система - Шифрование текста</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Криптографическая система</h1>
+            <p class="subtitle">Шифрование и дешифрование текста методами Плейфейра и Виженера</p>
+        </header>
+        
+        <div class="main-grid">
+            <div class="card">
+                <h2 class="card-title">Настройки шифрования</h2>
+                
+                <div class="message" id="message"></div>
+                
+                <div class="form-group">
+                    <label>Выберите алгоритм шифрования:</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="cipher" value="playfair" checked>
+                            Шифр Плейфейра (английский)
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="cipher" value="vigenere">
+                            Шифр Виженера (русский, прогрессивный ключ)
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Выберите действие:</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="action" value="encrypt" checked>
+                            Зашифровать
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="action" value="decrypt">
+                            Расшифровать
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="key">Ключ шифрования:</label>
+                    <input type="text" id="key" placeholder="Введите ключевое слово" />
+                    <div class="key-info">
+                        <strong>Плейфейра:</strong> латинские буквы (A-Z), минимум 1 символ<br>
+                        <strong>Виженера:</strong> русские буквы (А-Я), минимум 1 символ
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fileInput">Загрузить файл (необязательно):</label>
+                    <input type="file" id="fileInput" accept=".txt" />
+                </div>
+                
+                <div class="test-examples">
+                    <div class="test-examples-title">Тестовые примеры:</div>
+                    <div class="test-buttons" id="testButtons">
+                        <!-- Тесты загружаются динамически через JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">Исходный текст</h2>
+                <div class="form-group">
+                    <textarea id="inputText" placeholder="Введите текст для шифрования или загрузите файл"></textarea>
+                </div>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="processText()">Обработать текст</button>
+                    <button class="btn-secondary" onclick="clearInput()">Очистить</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title">Результат</h2>
+                <div class="form-group">
+                    <textarea id="outputText" placeholder="Результат появится здесь" readonly></textarea>
+                </div>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="saveToFile()">Сохранить в файл</button>
+                    <button class="btn-secondary" onclick="copyToClipboard()">Копировать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
