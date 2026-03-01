@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Криптографическая система - Шифрование текста</title>
     <link rel="stylesheet" href="styles.css">
+<base target="_blank">
 </head>
 <body>
     <div class="container">
@@ -64,7 +65,6 @@
                 <div class="test-examples">
                     <div class="test-examples-title">Тестовые примеры:</div>
                     <div class="test-buttons" id="testButtons">
-                        <!-- Тесты загружаются динамически через JS -->
                     </div>
                 </div>
             </div>
@@ -75,7 +75,7 @@
                     <textarea id="inputText" placeholder="Введите текст для шифрования или загрузите файл"></textarea>
                 </div>
                 <div class="button-group">
-                    <button class="btn-primary" onclick="processText()">Обработать текст</button>
+                    <button class="btn-primary" onclick="processText()" id="processBtn">Шифровать</button>
                     <button class="btn-secondary" onclick="clearInput()">Очистить</button>
                 </div>
             </div>

@@ -96,6 +96,17 @@ const testData = {
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ============================================================
 
+// Обновление текста кнопки в зависимости от выбранного действия
+function updateProcessButtonText() {
+    const action = document.querySelector('input[name="action"]:checked').value;
+    const btn = document.getElementById('processBtn');
+    if (action === 'encrypt') {
+        btn.textContent = 'Шифровать';
+    } else {
+        btn.textContent = 'Дешифровать';
+    }
+}
+
 // Обновление отображаемых тестов
 function updateTestButtons() {
     const cipher = document.querySelector('input[name="cipher"]:checked').value;
@@ -117,10 +128,16 @@ function updateTestButtons() {
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     updateTestButtons();
+    updateProcessButtonText();
     
     // Обновляем тесты при смене алгоритма
     document.querySelectorAll('input[name="cipher"]').forEach(radio => {
         radio.addEventListener('change', updateTestButtons);
+    });
+    
+    // Обновляем текст кнопки при смене действия
+    document.querySelectorAll('input[name="action"]').forEach(radio => {
+        radio.addEventListener('change', updateProcessButtonText);
     });
 });
 
@@ -134,6 +151,7 @@ function loadTest(testId) {
     document.getElementById('key').value = test.key;
     document.getElementById('inputText').value = test.text;
     updateTestButtons();
+    updateProcessButtonText();
     showMessage(`Загружен: ${test.name}`, 'success');
 }
 
