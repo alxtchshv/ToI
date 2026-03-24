@@ -374,89 +374,67 @@ function playfairDecrypt(text, key) {
 // ШИФР ВИЖЕНЕРА С ПРОГРЕССИВНЫМ КЛЮЧОМ
 // ============================================================
 
+const RU_ALPHABET = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
+
 function prepareVigenereText(text) {
-    // Удаляем все кроме русских букв, переводим в верхний регистр
-    return text.toUpperCase().replace(/[^А-Я]/g, '');
+    return text.toUpperCase().replace(/[^А-ЯЁ]/g, '');
 }
 
 function prepareVigenereKey(key) {
-    return key.toUpperCase().replace(/[^А-Я]/g, '');
+    return key.toUpperCase().replace(/[^А-ЯЁ]/g, '');
 }
 
 function getProgressiveKey(baseKey, keyUsageCount) {
-    const alphabet = 'АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
     let result = '';
-    
     for (let char of baseKey) {
-        const index = alphabet.indexOf(char);
-        const newIndex = (index + keyUsageCount) % alphabet.length;
-        result += alphabet[newIndex];
+        const index = RU_ALPHABET.indexOf(char);
+        const newIndex = (index + keyUsageCount) % RU_ALPHABET.length;
+        result += RU_ALPHABET[newIndex];
     }
-    
     return result;
 }
 
 function vigenereEncrypt(text, baseKey) {
-    const alphabet = 'АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
-    const prepared = prepareVigenereText(text);
-    const preparedKey = prepareVigenereKey(baseKey);
-    let result = '';
-    let charCount = 0; // Счётчик обработанных символов
-    
-    for (let i = 0; i < prepared.length; i++) {
-        const char = prepared[i];
-        const charIndex = alphabet.indexOf(char);
-        
-        // Вычисляем, какой это "цикл" использования ключа
-        const keyUsageCount = Math.floor(charCount / preparedKey.length);
-        
-        // Получаем прогрессивный ключ для текущего цикла
-        const currentKey = getProgressiveKey(preparedKey, keyUsageCount);
-        
-        // Позиция в текущем ключе
-        const keyPosition = charCount % preparedKey.length;
-        const keyChar = currentKey[keyPosition];
-        const keyCharIndex = alphabet.indexOf(keyChar);
-        
-        // Шифрование
-        const encryptedIndex = (charIndex + keyCharIndex) % alphabet.length;
-        result += alphabet[encryptedIndex];
-        
-        charCount++;
-    }
-    
-    return result;
-}
-
-function vigenereDecrypt(text, baseKey) {
-    const alphabet = 'АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
     const prepared = prepareVigenereText(text);
     const preparedKey = prepareVigenereKey(baseKey);
     let result = '';
     let charCount = 0;
-    
+
     for (let i = 0; i < prepared.length; i++) {
-        const char = prepared[i];
-        const charIndex = alphabet.indexOf(char);
-        
-        // Вычисляем, какой это "цикл" использования ключа
+        const charIndex = RU_ALPHABET.indexOf(prepared[i]);
+
         const keyUsageCount = Math.floor(charCount / preparedKey.length);
-        
-        // Получаем прогрессивный ключ для текущего цикла
         const currentKey = getProgressiveKey(preparedKey, keyUsageCount);
-        
-        // Позиция в текущем ключе
+
         const keyPosition = charCount % preparedKey.length;
-        const keyChar = currentKey[keyPosition];
-        const keyCharIndex = alphabet.indexOf(keyChar);
-        
-        // Расшифрование
-        const decryptedIndex = (charIndex - keyCharIndex + alphabet.length) % alphabet.length;
-        result += alphabet[decryptedIndex];
-        
+        const keyCharIndex = RU_ALPHABET.indexOf(currentKey[keyPosition]);
+
+        result += RU_ALPHABET[(charIndex + keyCharIndex) % RU_ALPHABET.length];
         charCount++;
     }
-    
+
+    return result;
+}
+
+function vigenereDecrypt(text, baseKey) {
+    const prepared = prepareVigenereText(text);
+    const preparedKey = prepareVigenereKey(baseKey);
+    let result = '';
+    let charCount = 0;
+
+    for (let i = 0; i < prepared.length; i++) {
+        const charIndex = RU_ALPHABET.indexOf(prepared[i]);
+
+        const keyUsageCount = Math.floor(charCount / preparedKey.length);
+        const currentKey = getProgressiveKey(preparedKey, keyUsageCount);
+
+        const keyPosition = charCount % preparedKey.length;
+        const keyCharIndex = RU_ALPHABET.indexOf(currentKey[keyPosition]);
+
+        result += RU_ALPHABET[(charIndex - keyCharIndex + RU_ALPHABET.length) % RU_ALPHABET.length];
+        charCount++;
+    }
+
     return result;
 }
 
@@ -498,7 +476,7 @@ function processText() {
             }
         } else if (cipher === 'vigenere') {
             // Проверка ключа на русские буквы
-            if (!/[А-Яа-я]/.test(key)) {
+            if (!/[А-ЯËа-яё]/.test(key)) {
                 showMessage('Для шифра Виженера ключ должен содержать русские буквы', 'error');
                 return;
             }
