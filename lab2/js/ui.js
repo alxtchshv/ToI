@@ -3,7 +3,6 @@ export function getUi() {
   return {
     seedInput: document.getElementById("seedInput"),
     seedHint: document.getElementById("seedHint"),
-    tapsInput: document.getElementById("tapsInput"),
     keyPreviewBits: document.getElementById("keyPreviewBits"),
     setOnesBtn: document.getElementById("setOnesBtn"),
     fileInput: document.getElementById("fileInput"),

@@ -24,14 +24,9 @@
           </label>
 
           <label class="field">
-            <span>Полином обратной связи (степени через запятую)</span>
-            <input
-              id="tapsInput"
-              type="text"
-              value="37,12,10,2,0"
-              autocomplete="off"
-            />
-            <small>Формат: 37,12,10,2,0 (x^37 + x^12 + x^10 + x^2 + 1)</small>
+            <span>Используемый примитивный многочлен</span>
+            <input type="text" value="x³⁷ + x¹² + x¹⁰ + x² + 1" disabled />
+            <small>Вариант 15 — фиксированный примитивный многочлен</small>
           </label>
 
           <label class="field">
@@ -41,7 +36,7 @@
         </div>
 
         <div class="controls">
-          <button id="setOnesBtn" type="button">Поставить все 1 (обяз. условие)</button>
+          <button id="setOnesBtn" type="button">Поставить все биты начального состояния регистра = 1</button>
         </div>
       </section>
 

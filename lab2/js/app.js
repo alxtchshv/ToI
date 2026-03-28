@@ -1,5 +1,5 @@
-import { DEFAULT_SEED, REGISTER_SIZE } from "./constants.js";
-import { parseTaps, sanitizeBitString, normalizeSeed } from "./lfsr.js";
+import { DEFAULT_SEED, DEFAULT_TAPS, REGISTER_SIZE } from "./constants.js";
+import { sanitizeBitString, normalizeSeed } from "./lfsr.js";
 import { xorTransform } from "./crypto.js";
 import { filePreviewBitString, bitArrayToString, symmetricPreview } from "./binary.js";
 import { getUi, setStatus } from "./ui.js";
@@ -48,7 +48,7 @@ async function processFile(mode) {
     return;
   }
 
-  const taps = parseTaps(ui.tapsInput.value);
+  const taps = DEFAULT_TAPS;
   const previewBitsCount = Number(ui.keyPreviewBits.value) || 128;
 
   const arrayBuffer = await file.arrayBuffer();
