@@ -26,13 +26,25 @@ export function parseTaps(tapsText) {
   return [...new Set(numbers)].sort((a, b) => b - a);
 }
 
-// Создает LFSR-генератор, который выдает по одному биту ключевого потока.
+//   idx = REGISTER_SIZE - d
+//   степень 37 - idx = 0
+//   степень 12 - idx = 25
+//   степень 10 - idx = 27
+//   степень  2 - idx = 35
+//   степень  0 - idx = 37 (свободный член; означает что выходной бит reg[0]
+
+//   outBit   = reg[0]                        (MSB выходит)
+//   feedback = XOR всех отводов
+//   reg[0..35] = reg[1..36]                 (сдвиг)
+//   reg[36]  = feedback                      (новый бит справа)
 export function createLfsr(seedBits, tapsDegrees) {
   const seed = normalizeSeed(seedBits);
   let reg = seed.split("").map((ch) => Number(ch));
+
+  // Степень d - индекс REGISTER_SIZE - d; исключаем d=REGISTER_SIZE (=0) и d=0 (=37)
   const tapIndices = tapsDegrees
-    .filter((d) => d !== REGISTER_SIZE)
-    .map((d) => REGISTER_SIZE - 1 - d);
+    .filter((d) => d > 0 && d < REGISTER_SIZE)
+    .map((d) => REGISTER_SIZE - d);
 
   if (reg.every((bit) => bit === 0)) {
     throw new Error("Начальное состояние из одних нулей недопустимо для LFSR.");
@@ -40,17 +52,21 @@ export function createLfsr(seedBits, tapsDegrees) {
 
   return {
     nextBit() {
-      const outBit = reg[REGISTER_SIZE - 1];
-      let feedback = 0;
+      // Выходной бит — MSB (reg[0], степень 37)
+      const outBit = reg[0];
 
+      // Feedback = XOR отводов (степени 37,12,10,2):
+      let feedback = reg[0]; // степень 37 всегда участвует как старший член
       for (const idx of tapIndices) {
         feedback ^= reg[idx];
       }
 
-      for (let i = REGISTER_SIZE - 1; i > 0; i -= 1) {
-        reg[i] = reg[i - 1];
+      // Сдвиг влево. каждый разряд берёт значение правого соседа
+      for (let i = 0; i < REGISTER_SIZE - 1; i += 1) {
+        reg[i] = reg[i + 1];
       }
-      reg[0] = feedback;
+      // Новый бит (feedback) вписывается справа (в LSB)
+      reg[REGISTER_SIZE - 1] = feedback;
 
       return outBit;
     },
