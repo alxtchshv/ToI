@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Криптосистема Эль-Гамаля — БГУИР</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ════════════ ШАПКА ════════════ -->
+<header class="header">
+    <div class="header-title">Криптосистема Эль-Гамаля</div>
+    <div class="header-sub">Лабораторная работа №2 &nbsp;·&nbsp; БГУИР &nbsp;·&nbsp; Вариант 2</div>
+</header>
+
+<!-- ════════════ ОСНОВНОЙ КОНТЕНТ ════════════ -->
+<main class="container">
+
+    <!-- ── Вкладки навигации ── -->
+    <nav class="tabs-nav">
+        <button class="tab-btn active" data-tab="tab-keys">1. Ключи</button>
+        <button class="tab-btn"        data-tab="tab-encrypt">2. Шифрование</button>
+        <button class="tab-btn"        data-tab="tab-decrypt">3. Дешифрование</button>
+        <button class="tab-btn"        data-tab="tab-view">4. Просмотр</button>
+    </nav>
+
+    <!-- ═══════════════════════════════════════
+         ВКЛАДКА 1: Генерация ключей
+    ═══════════════════════════════════════ -->
+    <section id="tab-keys" class="tab-panel active">
+
+        <!-- Теоретическая справка -->
+        <div class="info-card">
+            <strong>Алгоритм генерации ключей (Эль-Гамаль):</strong><br>
+            1. Выбрать простое число <strong>p</strong><br>
+            2. Найти все первообразные корни g (g<sup>φ(p)</sup> = 1 mod p, g<sup>l</sup> ≠ 1 при 1 ≤ l ≤ φ(p)−1)<br>
+            3. Выбрать закрытый ключ x ∈ (1, p−1)<br>
+            4. Вычислить y = g<sup>x</sup> mod p<br>
+            <strong>Открытый ключ Ko = (p, g, y) &nbsp;·&nbsp; Закрытый ключ Kc = x</strong>
+        </div>
+
+        <!-- Шаг 1: ввод p и поиск корней -->
+        <div class="section">
+            <div class="section-title">Параметр p (простое число)</div>
+            <div class="field-row">
+                <label for="param-p">Введите простое число p:</label>
+                <input type="text" id="param-p" placeholder="например: 257" inputmode="numeric">
+                <button class="btn" id="btn-find-roots">Найти все первообразные корни</button>
+            </div>
+            <div class="progress-wrap" id="key-progress">
+                <div class="progress-track"><div class="progress-bar"></div></div>
+            </div>
+        </div>
+
+        <!-- Шаг 2: выбор g -->
+        <div class="section">
+            <div class="section-title">
+                Выбор первообразного корня g
+                <span class="badge" id="roots-count">0 корней</span>
+            </div>
+            <div class="field-row">
+                <label for="param-g">Выберите g:</label>
+                <select id="param-g">
+                    <option value="">— сначала найдите корни —</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Шаг 3: закрытый ключ x -->
+        <div class="section">
+            <div class="section-title">Закрытый ключ x</div>
+            <div class="field-row">
+                <label for="param-x">Введите x (должно быть 1 &lt; x &lt; p−1):</label>
+                <input type="text" id="param-x" placeholder="например: 5" inputmode="numeric">
+            </div>
+        </div>
+
+        <!-- Hints (валидация) -->
+        <div class="hint-box" id="key-hint"></div>
+
+        <!-- Кнопка вычисления -->
+        <button class="btn btn-primary" id="btn-gen-keys" style="margin-bottom:1rem">
+            Вычислить открытый ключ y = g<sup>x</sup> mod p
+        </button>
+
+        <!-- Вывод -->
+        <div class="output-box" id="key-output">Результат появится здесь...</div>
+
+    </section><!-- /tab-keys -->
+
+
+    <!-- ═══════════════════════════════════════
+         ВКЛАДКА 2: Шифрование
+    ═══════════════════════════════════════ -->
+    <section id="tab-encrypt" class="tab-panel">
+
+        <div class="info-card">
+            <strong>Алгоритм шифрования (побайтово):</strong><br>
+            Для каждого байта m: выбрать k взаимно простое с p−1 &nbsp;→&nbsp;
+            a = g<sup>k</sup> mod p, &nbsp; b = y<sup>k</sup>·m mod p<br>
+            Первый блок шифруется введённым k, остальные — случайными k.<br>
+            <strong>p должно быть &gt; 255 для шифрования любых файлов.</strong>
+        </div>
+
+        <!-- Выбор файла -->
+        <div class="section">
+            <div class="section-title">Исходный файл</div>
+            <div class="file-zone">
+                <button class="btn btn-sm btn-secondary" id="btn-enc-choose-file">Выбрать файл</button>
+                <span class="file-label" id="enc-file-label">Файл не выбран</span>
+            </div>
+            <input type="file" id="enc-file-input" style="display:none">
+        </div>
+
+        <!-- Параметр k -->
+        <div class="section">
+            <div class="section-title">Параметр k для первого блока</div>
+            <div class="field-row">
+                <label for="enc-k">k (взаимно простое с p−1, 1 &lt; k &lt; p−1):</label>
+                <input type="text" id="enc-k" placeholder="например: 7" inputmode="numeric">
+            </div>
+            <div class="hint-box" id="enc-k-hint"></div>
+        </div>
+
+        <!-- Кнопка и прогресс -->
+        <button class="btn btn-primary" id="btn-encrypt" style="margin-bottom:0.8rem">
+            Зашифровать файл
+        </button>
+
+        <div class="progress-wrap" id="enc-progress">
+            <div class="progress-track"><div class="progress-bar"></div></div>
+        </div>
+
+        <!-- Вывод и скачивание -->
+        <div class="output-box" id="enc-output">Результат появится здесь...</div>
+        <div id="enc-download-area"></div>
+
+    </section><!-- /tab-encrypt -->
+
+
+    <!-- ═══════════════════════════════════════
+         ВКЛАДКА 3: Дешифрование
+    ═══════════════════════════════════════ -->
+    <section id="tab-decrypt" class="tab-panel">
+
+        <div class="info-card">
+            <strong>Алгоритм дешифрования:</strong><br>
+            Для каждой пары (a, b): &nbsp; m = b · a<sup>−x</sup> mod p = b · (a<sup>x</sup>)<sup>−1</sup> mod p<br>
+            Введите закрытый ключ x и параметр p (или загрузите .enc файл — p подставится автоматически).
+        </div>
+
+        <!-- Выбор .enc файла -->
+        <div class="section">
+            <div class="section-title">Зашифрованный файл (.enc)</div>
+            <div class="file-zone">
+                <button class="btn btn-sm btn-secondary" id="btn-dec-choose-file">Выбрать .enc файл</button>
+                <span class="file-label" id="dec-file-label">Файл не выбран</span>
+            </div>
+            <input type="file" id="dec-file-input" style="display:none" accept=".enc">
+        </div>
+
+        <!-- Ключи -->
+        <div class="section">
+            <div class="section-title">Ключи для расшифровки</div>
+            <div class="field-row">
+                <label for="dec-x">Закрытый ключ x:</label>
+                <input type="text" id="dec-x" placeholder="x" inputmode="numeric">
+            </div>
+            <div class="field-row">
+                <label for="dec-p">Параметр p:</label>
+                <input type="text" id="dec-p" placeholder="p (заполняется из файла)" inputmode="numeric">
+            </div>
+            <button class="btn btn-sm btn-secondary" id="btn-dec-fill-keys" style="margin-top:0.4rem">
+                Заполнить из сгенерированных ключей
+            </button>
+        </div>
+
+        <!-- Кнопка и прогресс -->
+        <button class="btn btn-primary" id="btn-decrypt" style="margin-bottom:0.8rem">
+            Расшифровать файл
+        </button>
+
+        <div class="progress-wrap" id="dec-progress">
+            <div class="progress-track"><div class="progress-bar"></div></div>
+        </div>
+
+        <!-- Вывод и скачивание -->
+        <div class="output-box" id="dec-output">Результат появится здесь...</div>
+        <div id="dec-download-area"></div>
+
+    </section><!-- /tab-decrypt -->
+
+
+    <!-- ═══════════════════════════════════════
+         ВКЛАДКА 4: Просмотр файлов
+    ═══════════════════════════════════════ -->
+    <section id="tab-view" class="tab-panel">
+
+        <div class="info-card">
+            Просмотр содержимого любого файла. Для <strong>.enc файлов</strong> — автоматически
+            разбирает заголовок и показывает пары (a, b). Для обычных файлов — отображает байты в десятичной системе.
+        </div>
+
+        <!-- Выбор файла -->
+        <div class="section">
+            <div class="section-title">Файл для просмотра</div>
+            <div class="file-zone">
+                <button class="btn btn-sm btn-secondary" id="btn-view-choose-file">Выбрать файл</button>
+                <span class="file-label" id="view-file-label">Файл не выбран</span>
+            </div>
+            <input type="file" id="view-file-input" style="display:none">
+        </div>
+
+        <button class="btn" id="btn-view" style="margin-bottom:0.8rem">
+            Показать содержимое
+        </button>
+
+        <div class="output-box" id="view-output" style="max-height:460px">Результат появится здесь...</div>
+
+    </section><!-- /tab-view -->
+
+</main>
+
+<!-- ════════════ TOAST ════════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ════════════ СКРИПТЫ ════════════ -->
+<!-- Порядок важен: utils.js → elgamal.js → ui.js -->
+<script src="js/utils.js"></script>
+<script src="js/elgamal.js"></script>
+<script src="js/ui.js"></script>
+
+<!-- Обновляем счётчик корней при изменении select -->
+<script>
+    // Обновляем badge с количеством корней после инициализации
+    document.getElementById('param-g').addEventListener('change', () => {
+        const count = document.getElementById('param-g').options.length - 1;
+        document.getElementById('roots-count').textContent = count + ' корней';
+    });
+
+    // Хак: обновляем счётчик при поиске корней
+    const origFindRoots = document.getElementById('btn-find-roots');
+    const observer = new MutationObserver(() => {
+        const count = document.getElementById('param-g').options.length - 1;
+        if (count > 0) {
+            document.getElementById('roots-count').textContent = count + ' корней';
+        }
+    });
+    observer.observe(document.getElementById('param-g'), { childList: true });
+</script>
+
+</body>
+</html>
