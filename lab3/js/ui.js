@@ -316,7 +316,8 @@ function initEncryptTab() {
             try {
                 const result = encryptFile(
                     State.encryptFileData, State.p, State.g, State.y, k0,
-                    pct => { progress.querySelector('.progress-bar').style.width = pct + '%'; }
+                    pct => { progress.querySelector('.progress-bar').style.width = pct + '%'; },
+                    State.encryptFileName                  // встраиваем имя в .enc
                 );
 
                 output.textContent =
@@ -326,12 +327,14 @@ function initEncryptTab() {
 p = ${State.p}, g = ${State.g}, y = ${State.y}
 k для первого блока = ${k0}
 Исходный размер: ${result.originalLen} байт
-${result.paddingLen > 0 ? `Паддинг: ${result.paddingLen} байт\n` : ''}Всего пар (a, b): ${result.totalPairs}
+Всего пар (a, b): ${result.totalPairs}
+Размер .enc файла: ${result.buffer.byteLength} байт (заголовок 10+имя + 8·N)
 
-Первые пары (a, b):
-${result.log}`;
+Преобразованный файл (пары a b через двойной пробел):
+${'─'.repeat(70)}
+${result.flow}`;
 
-                // Кнопка скачивания
+                // Кнопка скачивания (бинарный файл)
                 const blob = new Blob([result.buffer], { type: 'application/octet-stream' });
                 const url  = URL.createObjectURL(blob);
                 dlArea.innerHTML = `
@@ -376,11 +379,14 @@ function initDecryptTab() {
         reader.onload = e => {
             State.decryptFileBuffer = e.target.result;
             State.decryptFileName = file.name;
-            // Автозаполняем p из заголовка файла
+            // Автозаполняем p из бинарного заголовка (байты 4..7, uint32 BE)
+            // Структура заголовка:  [0..3] originalLen, [4..7] p, [8..9] nameLen, [10..] name
             try {
-                const view = new DataView(e.target.result);
-                const pFromFile = view.getUint32(4, false);
-                pInput.value = pFromFile;
+                if (e.target.result.byteLength >= 8) {
+                    const view = new DataView(e.target.result);
+                    const pFromFile = view.getUint32(4, false);
+                    pInput.value = pFromFile;
+                }
             } catch { /* ignore */ }
         };
         reader.readAsArrayBuffer(file);
@@ -427,11 +433,15 @@ function initDecryptTab() {
 p = ${result.pFromFile}, x = ${x}${pMismatch}
 Восстановлено байт: ${result.data.length}
 
-Первые расшифрованные значения:
-${result.log}`;
+Расшифрованный файл (байты в десятичной СС):
+${'─'.repeat(70)}
+${result.flow}`;
 
-                // Определяем имя выходного файла (убираем .enc)
-                const outName = State.decryptFileName.replace(/\.enc$/i, '') || 'decrypted';
+                // Имя выходного файла — берём из заголовка .enc (с оригинальным расширением)
+                // Fallback: убираем .enc из текущего имени файла
+                const outName = result.originalName
+                    || State.decryptFileName.replace(/\.enc$/i, '')
+                    || 'decrypted';
                 const blob = new Blob([result.data], { type: 'application/octet-stream' });
                 const url  = URL.createObjectURL(blob);
                 dlArea.innerHTML = `
@@ -480,51 +490,70 @@ function initViewTab() {
         const data = new Uint8Array(State.viewFileBuffer);
         const isEnc = State.viewFileName && State.viewFileName.toLowerCase().endsWith('.enc');
 
-        if (isEnc && data.length >= 8) {
-            const view = new DataView(State.viewFileBuffer);
-            const origLen = view.getUint32(0, false);
-            const p = view.getUint32(4, false);
-            const pairs = (data.length - 8) / 8;
+        if (isEnc) {
+            // Текстовый формат: парсим как числа через пробел/перевод строки
+            try {
+                if (data.length < 10) throw new Error('Файл слишком короткий');
 
-            let lines = [
-                `Файл: ${State.viewFileName}`,
-                `Размер: ${data.length} байт`,
-                `${'═'.repeat(60)}`,
-                `ЗАШИФРОВАННЫЙ ФАЙЛ`,
-                `${'═'.repeat(60)}`,
-                `Исходный размер: ${origLen} байт`,
-                `Параметр p: ${p}`,
-                `Всего пар (a, b): ${pairs}`,
-                ``,
-                `Первые 20 пар:`,
-                `${'─'.repeat(50)}`,
-                ` №         a           b`,
-                `${'─'.repeat(50)}`,
-            ];
-            const show = Math.min(20, pairs);
-            for (let i = 0; i < show; i++) {
-                const off = 8 + i * 8;
-                const a = view.getUint32(off, false);
-                const b = view.getUint32(off + 4, false);
-                lines.push(` ${String(i + 1).padStart(2)}   ${String(a).padStart(10)}   ${String(b).padStart(10)}`);
+                const view = new DataView(State.viewFileBuffer);
+                const u8 = new Uint8Array(State.viewFileBuffer);
+
+                const origLen = view.getUint32(0, false);
+                const pVal    = view.getUint32(4, false);
+                const nameLen = view.getUint16(8, false);
+
+                if (10 + nameLen > data.length) {
+                    throw new Error('Некорректный заголовок');
+                }
+
+                const origName = new TextDecoder().decode(u8.subarray(10, 10 + nameLen));
+                const headerSize = 10 + nameLen;
+                const pairs = (data.length - headerSize) / 8;
+
+                if (!Number.isInteger(pairs)) {
+                    throw new Error('Длина файла не кратна 8 (повреждён?)');
+                }
+
+                // Формируем пары потоком: "a b  a b  a b  ..."
+                const flowParts = [];
+                const showLimit = Math.min(pairs, 500);
+                for (let i = 0; i < showLimit; i++) {
+                    const off = headerSize + i * 8;
+                    const a = view.getUint32(off, false);
+                    const b = view.getUint32(off + 4, false);
+                    flowParts.push(`${a} ${b}`);
+                }
+                const flow = flowParts.join('  ');
+                const more = pairs > showLimit ? `\n\n... и ещё ${pairs - showLimit} пар` : '';
+
+                output.textContent =
+`Файл: ${State.viewFileName}
+Размер файла: ${data.length} байт
+
+Заголовок (${headerSize} байт):
+   Исходный размер:  ${origLen} байт
+   Параметр p:       ${pVal}
+   Оригинальное имя: ${origName || '(не задано)'}
+   Всего пар (a,b):  ${pairs}
+
+Преобразованный файл (пары a b через двойной пробел):
+${'─'.repeat(70)}
+${flow}${more}`;
+            } catch (e) {
+                output.textContent = `Ошибка чтения .enc файла: ${e.message}`;
             }
-            output.textContent = lines.join('\n');
         } else {
-            // Обычный файл — показываем байты
-            const show = Math.min(200, data.length);
-            let rows = [];
-            for (let i = 0; i < show; i += 20) {
-                rows.push(Array.from(data.slice(i, i + 20)).map(b => String(b).padStart(3)).join(' '));
-            }
+            // Обычный файл — байты потоком через одиночный пробел
+            const show = Math.min(500, data.length);
+            const flow = Array.from(data.slice(0, show)).join(' ');
+            const more = data.length > show ? `\n\n... и ещё ${data.length - show} байт` : '';
             output.textContent =
 `Файл: ${State.viewFileName}
 Размер: ${data.length} байт
 
-Первые ${show} байт (десятичные):
+Исходный файл (байты в десятичной СС):
 ${'─'.repeat(70)}
-${rows.join('\n')}
-${'─'.repeat(70)}
-... и ещё ${Math.max(0, data.length - show)} байт`;
+${flow}${more}`;
         }
     });
 }
